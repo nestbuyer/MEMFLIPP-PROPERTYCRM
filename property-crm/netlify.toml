@@ -1,5 +1,0 @@
-# Serve the CRM at the site root for any path
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
