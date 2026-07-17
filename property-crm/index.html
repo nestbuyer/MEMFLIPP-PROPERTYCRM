@@ -224,6 +224,22 @@
     <div class="section-head"><span class="section-title">SEND TO TEAM</span></div>
 
     <div class="panel">
+      <span class="field-label">Text a crew member their tasks for a property</span>
+      <div class="add-bar" style="margin-bottom:12px;flex-wrap:wrap;">
+        <input id="crewName" placeholder="Name (optional)" style="max-width:200px;">
+        <input id="crewPhone" type="tel" placeholder="Phone number">
+      </div>
+      <select id="crewProp" class="big" onchange="fillTasksForProp()" style="margin-bottom:12px;">
+        <option value="">— Pick a property —</option>
+      </select>
+      <textarea id="crewMsg" placeholder="Tasks will fill in here when you pick a property…"></textarea>
+      <div class="add-bar" style="margin-top:12px;">
+        <button class="btn" onclick="sendCrewText()">Send text</button>
+        <button class="btn ghost" onclick="copyCrewText()">Copy</button>
+      </div>
+    </div>
+
+    <div class="panel">
       <span class="field-label">Quick broadcast — write your own message</span>
       <div class="add-bar" style="margin-bottom:12px;flex-wrap:wrap;">
         <input id="bcastName" placeholder="Name (optional)" style="max-width:200px;">
@@ -347,9 +363,9 @@ function badgesFor(p){
 }
 function metaFor(p){
   if(p.section==="In Contract")
-    return `${money(p.bought)} · Down ${money(p.down)} · Closing ${p.closing?fmtLong(p.closing):"TBD"}`;
-  const acq=p.acquired?` · Closed ${fmtLong(p.acquired)}`:"";
-  return `${money(p.bought)} · Est. profit ${money(p.profit)}${acq}`;
+    return `${money(p.bought)} \u00b7 Down ${money(p.down)} \u00b7 Closing ${p.closing?fmtLong(p.closing):"TBD"}`;
+  const acq=p.acquired?` \u00b7 Closed ${fmtLong(p.acquired)}`:"";
+  return `${money(p.bought)} \u00b7 Est. profit ${money(p.profit)}${acq}`;
 }
 function taskListHtml(p){
   const list=tasksOf(p.id);
@@ -359,7 +375,7 @@ function taskListHtml(p){
       <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${p.id}','${t.id}')">
       <span class="pt-text">${esc(t.text)}</span>
       ${t.who?`<span class="who-chip">${esc(t.who)}</span>`:""}
-      <button class="pt-del" onclick="delTask('${p.id}','${t.id}')" title="Delete">✕</button>
+      <button class="pt-del" onclick="delTask('${p.id}','${t.id}')" title="Delete">\u2715</button>
     </div>`).join("");
 }
 const ALL_STATUSES=["Renovations","Hold","Tenants","On the Market","In Contract","Flip","Case"];
@@ -367,7 +383,7 @@ function setStatus(pid,val){
   STATUS_OVERRIDES[pid]=val;
   saveStatuses();
   refreshAll();
-  toast("Status updated to “"+val+"”");
+  toast("Status updated to \u201c"+val+"\u201d");
 }
 function statusSelectHtml(p){
   const cur=statusOf(p);
@@ -382,13 +398,13 @@ function buildCard(p,idx){
     <div class="pcard-main">
       ${idx!=null?`<span class="idx">${idx}</span>`:""}
       <div class="info"><div class="addr">${esc(p.address)}</div><div class="meta">${metaFor(p)}</div></div>
-      <div class="right">${badgesFor(p)}<span class="chev">▾</span></div>
+      <div class="right">${badgesFor(p)}<span class="chev">\u25be</span></div>
     </div>
     <div class="pcard-extra">
       <div class="extra-label">Tasks for this property</div>
       <div class="ptasks">${taskListHtml(p)}</div>
       <div class="task-add">
-        <input placeholder="Add a task…" id="add_${p.id}" onkeydown="if(event.key==='Enter')addTask('${p.id}')">
+        <input placeholder="Add a task\u2026" id="add_${p.id}" onkeydown="if(event.key==='Enter')addTask('${p.id}')">
         <button class="btn-sm" onclick="addTask('${p.id}')">Add</button>
       </div>
       ${statusSelectHtml(p)}
@@ -401,7 +417,7 @@ function buildCard(p,idx){
 }
 function renderCardList(arr,containerId,numbered){
   const el=$(containerId);el.innerHTML="";
-  if(arr.length===0){el.innerHTML=`<div class="empty"><div class="icon">🏠</div><div>Nothing here yet.</div></div>`;return;}
+  if(arr.length===0){el.innerHTML=`<div class="empty"><div class="icon">\ud83c\udfe0</div><div>Nothing here yet.</div></div>`;return;}
   arr.forEach((p,i)=>el.appendChild(buildCard(p,numbered?i+1:null)));
 }
 function renderInventory(){
@@ -435,7 +451,7 @@ function textTasks(pid,who){
   let list=openTasksOf(pid).filter(t=>t.who===who);
   if(list.length===0)list=openTasksOf(pid);               // fall back to all open tasks
   if(list.length===0){toast("No open tasks to send");return;}
-  const lines=list.map(t=>"• "+t.text).join("\n");
+  const lines=list.map(t=>"\u2022 "+t.text).join("\n");
   const msg=`Hi ${who}, here's what's needed at ${p.address}:\n${lines}\n\nThanks, Geovanny`;
   openSMS(phoneOf(who),msg);
   toast("Opening Messages for "+who);
@@ -459,10 +475,10 @@ function renderToday(){
   });
   const open=rows.filter(r=>!r.t.done);
   $("#todayCount").textContent=open.length+" open";
-  if(rows.length===0){el.innerHTML=`<div class="empty"><div class="icon">✓</div><div>No tasks anywhere yet.</div><div class="hint">Open a property and add tasks, or add a general one above.</div></div>`;return;}
+  if(rows.length===0){el.innerHTML=`<div class="empty"><div class="icon">\u2713</div><div>No tasks anywhere yet.</div><div class="hint">Open a property and add tasks, or add a general one above.</div></div>`;return;}
   rows.sort((a,b)=>(a.t.done-b.t.done));
   rows.forEach(r=>{
-    const sub=r.where+(r.t.who?" · "+r.t.who:"");
+    const sub=r.where+(r.t.who?" \u00b7 "+r.t.who:"");
     const div=document.createElement("div");
     div.className="task"+(r.t.done?" done":"");
     div.innerHTML=`<input type="checkbox" ${r.t.done?'checked':''}>
@@ -487,7 +503,8 @@ function renderFlips(){
   FLIPS.forEach((f,i)=>{tB+=f.bought;tP+=f.soldPrice;tN+=(f.net||0);
     body.insertAdjacentHTML("beforeend",`<tr><td>${i+1}</td><td class="addr-cell">${esc(f.address)}</td>
       <td>${fmtMY(f.purchased)}</td><td class="num">${money(f.bought)}</td><td>${fmtLong(f.soldDate)}</td>
-      <td class="num">${money(f.soldPrice)}</td><td class="num">${netDisp(f.net)}</td><td>${esc(f.source)}</td></tr>`);});
+      <td class="num">${money(f.soldPrice)}</td><td class="num">${netDisp(f.net)}</td><td>${esc(f.source)}</td></tr>`);
+  });
   $("#flipsFoot").innerHTML=`<tr><td></td><td class="totals-label">TOTALS</td><td></td><td class="num">${money(tB)}</td><td></td><td class="num">${money(tP)}</td><td class="num">${money(tN)}</td><td></td></tr>`;
   $("#flipsCount").textContent=FLIPS.length;$("#flipsPill").textContent=FLIPS.length+" properties";
   $("#flipsInvested").textContent=compact(tB);$("#flipsSold").textContent=compact(tP);$("#flipsNet").textContent=compact(tN);
@@ -497,13 +514,50 @@ function renderAssigned(){
   ASGN.forEach(a=>{tot+=a.received;
     body.insertAdjacentHTML("beforeend",`<tr><td class="addr-cell">${esc(a.address)}</td>
       <td>${fmtLong(a.purchased)}</td><td>${fmtLong(a.soldDate)}</td><td><span class="badge b-assigned">ASSIGNED</span></td>
-      <td class="num">${a.down==null?'<span class="dash">—</span>':money(a.down)}</td><td class="num">${money(a.received)}</td></tr>`);});
+      <td class="num">${a.down==null?'<span class="dash">\u2014</span>':money(a.down)}</td><td class="num">${money(a.received)}</td></tr>`);
+  });
   $("#assignFoot").innerHTML=`<tr><td class="totals-label">TOTAL RECEIVED</td><td></td><td></td><td></td><td></td><td class="num">${money(tot)}</td></tr>`;
   $("#assignCount").textContent=ASGN.length+" deals";
 }
 /* ============================================================
    TEAM TAB
    ============================================================ */
+function fillPropSelect(){
+  const sel=$("#crewProp");if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">\u2014 Pick a property \u2014</option>';
+  ACTIVE.forEach(p=>{
+    const opt=document.createElement("option");
+    opt.value=p.id;opt.textContent=p.address;
+    if(p.id===cur)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+function fillTasksForProp(){
+  const pid=$("#crewProp").value;
+  const ta=$("#crewMsg");
+  if(!pid){ta.value="";return;}
+  const p=BACKUP.find(x=>x.id===pid);
+  const tasks=openTasksOf(pid);
+  if(tasks.length===0){ta.value="No open tasks for "+p.address+".";return;}
+  const lines=tasks.map(t=>"\u2022 "+t.text).join("\n");
+  const name=$("#crewName").value.trim();
+  ta.value=(name?"Hi "+name+",\n\n":"")+"Here's what's needed at "+p.address+":\n"+lines+"\n\nThanks, Geovanny";
+}
+function sendCrewText(){
+  const msg=$("#crewMsg").value.trim();
+  const phone=$("#crewPhone").value.trim().replace(/[^0-9+]/g,"");
+  if(!msg){toast("Pick a property first");return;}
+  if(!phone){toast("Enter a phone number first");return;}
+  openSMS(phone,msg);
+  const name=$("#crewName").value.trim();
+  toast("Opening Messages"+(name?" for "+name:""));
+}
+function copyCrewText(){
+  const msg=$("#crewMsg").value.trim();
+  if(!msg){toast("Pick a property first");return;}
+  navigator.clipboard&&navigator.clipboard.writeText(msg).then(()=>toast("Copied"),()=>toast("Copy failed"));
+}
 function sendBroadcast(){
   const msg=$("#bcastMsg").value.trim();
   const name=$("#bcastName").value.trim();
@@ -553,13 +607,13 @@ function importData(ev){
    REFRESH + INIT
    ============================================================ */
 function refreshAll(){
-  renderInventory();renderContract();
+  renderInventory();renderContract();fillPropSelect();
   const active=document.querySelector(".view.active");
   if(active&&active.dataset.view==="today")renderToday();
 }
 buildNav();
 renderInventory();renderContract();renderFlips();renderAssigned();
-renderToday();
+renderToday();fillPropSelect();
 // Show inventory view by default
 (function(){const tabs=document.querySelectorAll(".tab");const views=document.querySelectorAll(".view");
 views.forEach(v=>v.classList.toggle("active",v.dataset.view==="inventory"));
