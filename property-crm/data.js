@@ -15,9 +15,33 @@
    - "Assigned"          → shows in Assigned tab
    ============================================================ */
 
+/* ============================================================
+   SHARED TASKS — edit this section to add tasks that appear
+   on ALL devices automatically (phone, desktop, tablet).
+
+   HOW TO ADD A TASK:
+   Find the property's "id" in the BACKUP list below, then
+   add it here with the task text(s) you want.
+
+   Use "_general" for tasks that are NOT tied to a property
+   (they show up in the Today's Tasks tab).
+
+   REMOVING A TASK: delete the text from here and it will
+   disappear on all devices (unless already marked done).
+
+   EXAMPLE:
+   "e657c1f3-9462-42c1-bd82-a3c165da7696": ["Call contractor", "Get permits"],
+   "_general": ["Call the bank", "Review Q3 deals"]
+   ============================================================ */
+
+const SHARED_TASKS = {
+  "d91565d6-9755-4406-94bf-2060780e7c0b": ["Remove tenant"],
+  "b2f47e10-3c8a-4d21-9e6f-7a05c1d83b44": ["Remove tenant"]
+};
+
 const BACKUP = [
-  /* ── ACTIVE INVENTORY ─────────────────────────────────── */
-   {"id":"e657c1f3-9462-42c1-bd82-a3c165da7696","section":"Active Inventory","address":"63 Old Albany Post Rd","bought":400000,"profit":990000,"status":"Renovations","source":"Auction","notes":"Renovation project"},
+  /* ── ACTIVE INVENTORY ──────────────────────────────────────── */
+  {"id":"e657c1f3-9462-42c1-bd82-a3c165da7696","section":"Active Inventory","address":"63 Old Albany Post Rd","bought":400000,"profit":990000,"status":"Renovations","source":"Auction","notes":"Renovation project"},
   {"id":"c8d9aa5c-549a-4f06-9114-bdae2b809058","section":"Active Inventory","address":"Boat Slip A-28","bought":32000,"profit":55000,"status":"Hold","source":"Other"},
   {"id":"0d7347d0-da3c-45b5-bf08-8c0b4f6e5765","section":"Active Inventory","address":"5 Gualtiere Lane Ossining NY","bought":732000,"profit":450000,"status":"Tenants","source":"Auction"},
   {"id":"946cae95-47a2-49e4-a6c3-e3f7819d1cd8","section":"Active Inventory","address":"436 Dunham Ave Mount Vernon NY","bought":351000,"profit":100000,"status":"Tenants","source":"Auction"},
@@ -28,11 +52,11 @@ const BACKUP = [
   {"id":"d91565d6-9755-4406-94bf-2060780e7c0b","section":"Active Inventory","address":"462 S 4th Ave Mount Vernon NY","bought":175000,"profit":null,"status":"Tenants","source":"Auction","acquired":"2026-07-01"},
   {"id":"b2f47e10-3c8a-4d21-9e6f-7a05c1d83b44","section":"Active Inventory","address":"9 Wykagyl Court Carmel NY","bought":350000,"profit":null,"status":"Tenants","source":"","acquired":"2026-07-03"},
 
-  /* ── IN CONTRACT ───────────────────────────────────────── */
+  /* ── IN CONTRACT ──────────────────────────────────────────── */
   {"id":"f6f9ca13-c282-40ca-9a4a-f240f5e79615","section":"In Contract","address":"30 Hunter St Ossining NY","bought":300000,"down":30000,"closing":"2025-10-01","status":"Case","source":"Off Market"},
   {"id":"c7e9f2a1-3b4d-5e6f-8a9b-0c1d2e3f4a5b","section":"In Contract","address":"512 Warburton Ave Yonkers NY","bought":445000,"down":0,"status":"Case","source":""},
 
-  /* ── SOLD FLIPS ────────────────────────────────────────── */
+  /* ── SOLD FLIPS ──────────────────────────────────────────── */
   {"id":"86f36271-1179-4ff9-82ae-c00d08c9ac66","section":"Sold Flips","address":"131 Pelhamdale Ave Mt Vernon NY","bought":538000,"soldDate":"2026-05-29","soldPrice":925000,"source":"Auction","status":"Closed"},
   {"id":"6b8ca621-b59d-4205-b423-b9400003c446","section":"Sold Flips","address":"7 Bracken Rd Ossining NY","bought":565000,"soldDate":"2026-05-07","soldPrice":760000,"source":"Off Market","status":"Closed"},
   {"id":"7fa002e2-9e54-4ce5-9402-bfc1f612655d","section":"Sold Flips","address":"35 Brook St Croton on Hudson NY","bought":375000,"soldDate":"2026-05-15","soldPrice":455000,"source":"Auction","status":"Closed"},
@@ -48,7 +72,7 @@ const BACKUP = [
   {"id":"3d62bb4d-2922-4876-80cd-bad0a21491a7","section":"Sold Flips","address":"6 Stewart Pl Yonkers NY","purchased":"2025-04-01","bought":380000,"soldDate":"2025-11-18","soldPrice":595000,"net":548000,"source":"Off Market","status":"Closed"},
   {"id":"2394596b-9bfe-4997-9109-518954aafd16","section":"Sold Flips","address":"26 Old Mill Rd Yorktown Heights NY","purchased":"2025-10-01","bought":335000,"soldDate":"2026-04-09","soldPrice":405000,"net":386000,"source":"Auction","status":"Closed"},
 
-  /* ── ASSIGNED ──────────────────────────────────────────── */
+  /* ── ASSIGNED ────────────────────────────────────────────── */
   {"id":"83bf4fff-52ea-4ea9-8221-4cae6e4f9f06","section":"Assigned","address":"665 North Division St Peekskill NY","status":"Assigned","down":18000,"received":30333},
   {"id":"f2057d4e-1c2c-41c3-ae48-f8c73476b52b","section":"Assigned","address":"24 Somerton Rd Yorktown Heights NY","purchased":"2025-08-05","soldDate":"2025-10-15","status":"Assigned","received":2000},
   {"id":"bf937089-4cf3-4210-93b3-4ef92f515e58","section":"Assigned","address":"2241 Saw Mill River Rd Yorktown Heights","purchased":"2025-07-29","soldDate":"2025-10-15","status":"Assigned","received":10000},

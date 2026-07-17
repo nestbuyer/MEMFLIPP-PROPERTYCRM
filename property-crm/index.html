@@ -224,25 +224,16 @@
     <div class="section-head"><span class="section-title">SEND TO TEAM</span></div>
 
     <div class="panel">
-      <span class="field-label">Text a crew member their tasks for a property</span>
-      <select class="big" id="teamProp" onchange="renderTeamProp()"></select>
-      <div id="teamPropTasks" style="margin-top:14px;"></div>
-    </div>
-
-    <div class="panel">
       <span class="field-label">Quick broadcast — write your own message</span>
-      <div class="chips" id="bcastChips"></div>
-      <textarea id="bcastMsg" placeholder="Type a message to the selected crew…"></textarea>
+      <div class="add-bar" style="margin-bottom:12px;flex-wrap:wrap;">
+        <input id="bcastName" placeholder="Name (optional)" style="max-width:200px;">
+        <input id="bcastPhone" type="tel" placeholder="Phone number (e.g. 914-555-0142)">
+      </div>
+      <textarea id="bcastMsg" placeholder="Type your message…"></textarea>
       <div class="add-bar" style="margin-top:12px;">
         <button class="btn" onclick="sendBroadcast()">Send text</button>
         <button class="btn ghost" onclick="copyBroadcast()">Copy message</button>
       </div>
-    </div>
-
-    <div class="panel">
-      <span class="field-label">Crew &amp; phone numbers — add a number so texts go to the right person</span>
-      <div class="team-grid" id="crewGrid"></div>
-      <p class="fin-note">Numbers are saved on this device. Include the area code, e.g. 914-555-0142.</p>
     </div>
 
     <div class="panel">
@@ -251,7 +242,7 @@
         <button class="btn" onclick="exportData()">Download backup file</button>
         <label class="btn ghost" style="cursor:pointer;display:inline-block;">Restore from backup<input type="file" accept="application/json,.json" style="display:none;" onchange="importData(event)"></label>
       </div>
-      <p class="fin-note">Tasks and phone numbers save automatically on this device. Download a backup before clearing your browser or switching phones, then use Restore on the other device to bring everything over.</p>
+      <p class="fin-note">Tasks save automatically on this device. Download a backup before clearing your browser or switching phones, then use Restore on the other device to bring everything over.</p>
     </div>
   </section>
 </main>
@@ -266,13 +257,6 @@ const TABS=[
   {id:"today",label:"Today's Tasks"},{id:"inventory",label:"Inventory"},{id:"contract",label:"In Contract"},
   {id:"flips",label:"Sold Flips"},{id:"assigned",label:"Assigned"},{id:"team",label:"Send to Team"}
 ];
-const DEFAULT_CREW=[
-  {name:"Joshua",role:"Electrician",phone:""},
-  {name:"Javier",role:"Electrical helper",phone:""},
-  {name:"Joseph",role:"Plumber",phone:""},
-  {name:"Sylvia",role:"Property checks",phone:""}
-];
-
 /* derived sets */
 const INV   = BACKUP.filter(p=>p.section==="Active Inventory");
 const CON   = BACKUP.filter(p=>p.section==="In Contract");
@@ -286,26 +270,31 @@ const ACTIVE= INV.concat(CON);   // properties that can hold tasks
 function load(key,fallback){try{const s=localStorage.getItem(key);if(s)return JSON.parse(s);}catch(e){}return fallback;}
 function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
 let TASKS = load("crm_tasks_v3", {});        // { propId: [ {id,text,who,done} ] }
-let CREW  = load("crm_crew_v3", DEFAULT_CREW);
 let STATUS_OVERRIDES = load("crm_status_v1", {});
 function saveStatuses(){save("crm_status_v1",STATUS_OVERRIDES);}
 function statusOf(p){return STATUS_OVERRIDES[p.id]||p.status;}
 
-// Seed "Remove tenant" task for newly closed properties
-(function seedTenantTasks(){
-  const toSeed=[
-    {id:"d91565d6-9755-4406-94bf-2060780e7c0b",text:"Remove tenant"},
-    {id:"b2f47e10-3c8a-4d21-9e6f-7a05c1d83b44",text:"Remove tenant"}
-  ];
+// Seed tasks from data.js SHARED_TASKS — syncs to all devices via GitHub
+(function seedSharedTasks(){
+  if(typeof SHARED_TASKS==='undefined')return;
   let changed=false;
-  toSeed.forEach(function(s){
-    if(!TASKS[s.id])TASKS[s.id]=[];
-    if(!TASKS[s.id].some(function(t){return t.text===s.text;})){
-      TASKS[s.id].unshift({id:"seed_"+s.id,text:s.text,who:"",done:false});
-      changed=true;
-    }
+  Object.keys(SHARED_TASKS).forEach(function(pid){
+    const texts=SHARED_TASKS[pid];
+    if(!Array.isArray(texts))return;
+    if(!TASKS[pid])TASKS[pid]=[];
+    // Remove shared tasks that were deleted from data.js (unless already marked done)
+    TASKS[pid]=TASKS[pid].filter(function(t){
+      return !t.id.startsWith('shared_')||(t.done||texts.includes(t.text));
+    });
+    // Add any new shared tasks not yet present
+    texts.forEach(function(text){
+      if(!TASKS[pid].some(function(t){return t.text===text;})){
+        TASKS[pid].unshift({id:'shared_'+pid+'_'+String(Date.now()),text:text,who:'',done:false});
+        changed=true;
+      }
+    });
   });
-  if(changed)save("crm_tasks_v3",TASKS);
+  if(changed)save('crm_tasks_v3',TASKS);
 })();
 const openCards = new Set();
 
@@ -327,8 +316,6 @@ function fmtMY(iso){const x=d(iso);return x?MO[x.getMonth()]+" "+x.getFullYear()
 function fmtLong(iso){const x=d(iso);return x?MO[x.getMonth()]+" "+x.getDate()+", "+x.getFullYear():"TBD";}
 const STATUS_BADGE={"Renovations":["b-reno","RENOVATIONS"],"Hold":["b-hold","HOLD"],"Tenants":["b-tenants","TENANTS"],
   "In Contract":["b-contract","IN CONTRACT"],"On the Market":["b-market","ON THE MARKET"],"Flip":["b-flip","FLIP"],"Case":["b-flip","FLIP"]};
-function crewNames(){return CREW.map(c=>c.name);}
-function phoneOf(name){const c=CREW.find(c=>c.name===name);return c&&c.phone?c.phone.replace(/[^0-9+]/g,""):"";}
 
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),3200);}
 
@@ -375,12 +362,6 @@ function taskListHtml(p){
       <button class="pt-del" onclick="delTask('${p.id}','${t.id}')" title="Delete">✕</button>
     </div>`).join("");
 }
-function textButtonsHtml(p){
-  const open=openTasksOf(p.id);
-  if(open.length===0)return"";
-  const btns=crewNames().map(n=>`<button class="text-btn" onclick="textTasks('${p.id}','${esc(n)}')">✉ Text ${esc(n)}</button>`).join("");
-  return `<div class="text-row"><span class="lbl">Text tasks to:</span>${btns}</div>`;
-}
 const ALL_STATUSES=["Renovations","Hold","Tenants","On the Market","In Contract","Flip","Case"];
 function setStatus(pid,val){
   STATUS_OVERRIDES[pid]=val;
@@ -397,7 +378,6 @@ function statusSelectHtml(p){
 function buildCard(p,idx){
   const card=document.createElement("div");
   card.className="pcard"+(openCards.has(p.id)?" open":"");
-  const optionTags=crewNames().map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
   card.innerHTML=`
     <div class="pcard-main">
       ${idx!=null?`<span class="idx">${idx}</span>`:""}
@@ -409,10 +389,8 @@ function buildCard(p,idx){
       <div class="ptasks">${taskListHtml(p)}</div>
       <div class="task-add">
         <input placeholder="Add a task…" id="add_${p.id}" onkeydown="if(event.key==='Enter')addTask('${p.id}')">
-        <select id="who_${p.id}"><option value="">Unassigned</option>${optionTags}</select>
         <button class="btn-sm" onclick="addTask('${p.id}')">Add</button>
       </div>
-      ${textButtonsHtml(p)}
       ${statusSelectHtml(p)}
     </div>`;
   card.querySelector(".pcard-main").addEventListener("click",()=>{
@@ -443,10 +421,10 @@ function renderContract(){renderCardList(CON,"#contractList",false);$("#contract
    TASK ACTIONS
    ============================================================ */
 function addTask(id){
-  const inp=$("#add_"+CSS.escape(id));const sel=$("#who_"+CSS.escape(id));
+  const inp=$("#add_"+CSS.escape(id));
   const text=inp.value.trim();if(!text)return;
   if(!TASKS[id])TASKS[id]=[];
-  TASKS[id].push({id:String(Date.now()),text,who:sel.value,done:false});
+  TASKS[id].push({id:String(Date.now()),text,who:"",done:false});
   saveTasks();refreshAll();toast("Task added");
 }
 function toggleTask(pid,tid){const t=(TASKS[pid]||[]).find(t=>t.id===tid);if(t){t.done=!t.done;saveTasks();refreshAll();}}
@@ -526,55 +504,28 @@ function renderAssigned(){
 /* ============================================================
    TEAM TAB
    ============================================================ */
-function renderCrew(){
-  const el=$("#crewGrid");el.innerHTML="";
-  CREW.forEach((c,i)=>{
-    const m=document.createElement("div");m.className="member";
-    m.innerHTML=`<div class="m-top"><div class="av">${esc(c.name[0])}</div>
-      <div><div class="m-name">${esc(c.name)}</div><div class="m-role">${esc(c.role)}</div></div></div>
-      <input class="phone" type="tel" placeholder="Phone number" value="${esc(c.phone||"")}">`;
-    m.querySelector("input").addEventListener("change",e=>{CREW[i].phone=e.target.value.trim();save("crm_crew_v3",CREW);toast("Saved "+c.name+"'s number");});
-    el.appendChild(m);
-  });
-}
-function fillPropSelect(){
-  const sel=$("#teamProp");sel.innerHTML=`<option value="">— Choose a property —</option>`;
-  ACTIVE.forEach(p=>sel.insertAdjacentHTML("beforeend",`<option value="${p.id}">${esc(p.address)}</option>`));
-}
-function renderTeamProp(){
-  const pid=$("#teamProp").value;const box=$("#teamPropTasks");
-  if(!pid){box.innerHTML="";return;}
-  const p=BACKUP.find(x=>x.id===pid);
-  const open=openTasksOf(pid);
-  if(open.length===0){box.innerHTML=`<div class="empty-tasks">No open tasks for ${esc(p.address)}. Add tasks from the property's tab first.</div>`;return;}
-  const tasks=open.map(t=>`<div class="ptask"><span class="pt-text">• ${esc(t.text)}</span>${t.who?`<span class="who-chip">${esc(t.who)}</span>`:""}</div>`).join("");
-  const btns=crewNames().map(n=>`<button class="text-btn" onclick="textTasks('${pid}','${esc(n)}')">✉ Text ${esc(n)}</button>`).join("");
-  box.innerHTML=`<div class="ptasks">${tasks}</div><div class="text-row"><span class="lbl">Send to:</span>${btns}</div>`;
-}
-
-let bcastSel=new Set();
-function renderBcastChips(){
-  const el=$("#bcastChips");el.innerHTML="";
-  crewNames().forEach(n=>{const c=document.createElement("button");c.className="chip"+(bcastSel.has(n)?" sel":"");
-    c.textContent=n;c.onclick=()=>{bcastSel.has(n)?bcastSel.delete(n):bcastSel.add(n);renderBcastChips();};el.appendChild(c);});
-}
 function sendBroadcast(){
   const msg=$("#bcastMsg").value.trim();
+  const name=$("#bcastName").value.trim();
+  const phone=$("#bcastPhone").value.trim().replace(/[^0-9+]/g,"");
   if(!msg){toast("Write a message first");return;}
-  if(bcastSel.size===0){toast("Pick at least one crew member");return;}
-  const phones=[...bcastSel].map(phoneOf).filter(Boolean).join(",");
-  openSMS(phones,msg);toast("Opening Messages for "+[...bcastSel].join(", "));
+  if(!phone){toast("Enter a phone number first");return;}
+  const fullMsg=name?"Hi "+name+",\n\n"+msg+"\n\nThanks, Geovanny":msg;
+  openSMS(phone,fullMsg);
+  toast("Opening Messages"+(name?" for "+name:""));
 }
 function copyBroadcast(){
   const msg=$("#bcastMsg").value.trim();if(!msg){toast("Write a message first");return;}
-  navigator.clipboard&&navigator.clipboard.writeText(msg).then(()=>toast("Copied"),()=>toast("Copy failed"));
+  const name=$("#bcastName").value.trim();
+  const fullMsg=name?"Hi "+name+",\n\n"+msg+"\n\nThanks, Geovanny":msg;
+  navigator.clipboard&&navigator.clipboard.writeText(fullMsg).then(()=>toast("Copied"),()=>toast("Copy failed"));
 }
 
 /* ============================================================
    BACKUP / RESTORE
    ============================================================ */
 function exportData(){
-  const data={app:"MEM FLIPP CRM",exportedAt:new Date().toISOString(),tasks:TASKS,crew:CREW};
+  const data={app:"MEM FLIPP CRM",exportedAt:new Date().toISOString(),tasks:TASKS};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
@@ -590,8 +541,7 @@ function importData(ev){
     try{
       const d=JSON.parse(r.result);
       if(d.tasks){TASKS=d.tasks;saveTasks();}
-      if(d.crew){CREW=d.crew;save("crm_crew_v3",CREW);}
-      renderCrew();refreshAll();renderToday();
+      refreshAll();renderToday();
       toast("Backup restored");
     }catch(e){toast("Couldn't read that backup file");}
     ev.target.value="";
@@ -604,13 +554,12 @@ function importData(ev){
    ============================================================ */
 function refreshAll(){
   renderInventory();renderContract();
-  if($("#teamProp").value)renderTeamProp();
   const active=document.querySelector(".view.active");
   if(active&&active.dataset.view==="today")renderToday();
 }
 buildNav();
 renderInventory();renderContract();renderFlips();renderAssigned();
-renderToday();renderCrew();fillPropSelect();renderBcastChips();
+renderToday();
 // Show inventory view by default
 (function(){const tabs=document.querySelectorAll(".tab");const views=document.querySelectorAll(".view");
 views.forEach(v=>v.classList.toggle("active",v.dataset.view==="inventory"));
