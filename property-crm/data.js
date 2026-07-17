@@ -17,7 +17,8 @@
 
 const BACKUP = [
   /* ── ACTIVE INVENTORY ─────────────────────────────────── */
-  {"id":"e657c1f3-9462-42c1-bd82-a3c165da7696","section":"Active Inventory","address":"63 Old Albany Post Rd","bought":400000,"profit":990000,"status":"Renovations","source":"Auction","notes":"Renovation project"},
+ {"id":"NEW-UNIQUE-ID-HERE","section":"Active Inventory","address":"123 Your Street NY","bought":300000,"profit":150000,"status":"Renovations","source":"Auction"},
+   {"id":"e657c1f3-9462-42c1-bd82-a3c165da7696","section":"Active Inventory","address":"63 Old Albany Post Rd","bought":400000,"profit":990000,"status":"Renovations","source":"Auction","notes":"Renovation project"},
   {"id":"c8d9aa5c-549a-4f06-9114-bdae2b809058","section":"Active Inventory","address":"Boat Slip A-28","bought":32000,"profit":55000,"status":"Hold","source":"Other"},
   {"id":"0d7347d0-da3c-45b5-bf08-8c0b4f6e5765","section":"Active Inventory","address":"5 Gualtiere Lane Ossining NY","bought":732000,"profit":450000,"status":"Tenants","source":"Auction"},
   {"id":"946cae95-47a2-49e4-a6c3-e3f7819d1cd8","section":"Active Inventory","address":"436 Dunham Ave Mount Vernon NY","bought":351000,"profit":100000,"status":"Tenants","source":"Auction"},
